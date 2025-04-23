@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+dist/
+
+# Config / Secrets
+.env
+# Uncomment the next line if you DON'T want users to commit their prefs
+# .ai-cli-config.json
+
+# Logs
+logs/
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE config
+.vscode/
+.idea/
+
+# Cache
+.cache/

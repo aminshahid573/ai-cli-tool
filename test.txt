@@ -1,0 +1,9 @@
+pnpm build
+Test node dist/cli/index.js or global ai-cli:
+Empty Directory: Start ai-cli in a new, empty folder. Ask "hello", ask "what is typescript?". It should work. Ask "explain this project" (it should say no files found). Try /create file temp.txt.
+Project Directory: cd into your ai-cli-tool project. Run ai-cli. Ask "explain the interactiveLoop function". Ask "where is handleCodeQuery defined?".
+General Chat: Ask non-code questions ("What is the capital of France?").
+Project Creation: Try "create a basic nodejs express api". See if it generates a command like npm init -y && npm install express and asks for confirmation.
+Task Execution: Try "install chalk using pnpm". See if it generates pnpm add chalk and asks for confirmation.
+Manual Commands: Test /create and /run again.
+History: Use /history and /clear.

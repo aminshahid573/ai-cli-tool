@@ -1,0 +1,11 @@
+{
+    "defaultModel": "gemini-1.5-flash-latest",
+    "apiKeyEnvVar": "GEMINI_API_KEY",
+    "cache": {
+      "enabled": true,
+      "ttl": 3600
+    },
+    "output": {
+      "colors": true
+    }
+  }
