@@ -148,7 +148,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Author
 
-**Shahid Amin** - [GitHub](https://github.com/yourusername)
+**Shahid Amin** - [GitHub](https://github.com/aminshahid573)
 
 ## Acknowledgments
 
