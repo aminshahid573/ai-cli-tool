@@ -1,7 +1,8 @@
 // src/utils/filesystem.ts
 import fs from 'fs/promises';
 import path from 'path';
-import { logger } from './logger.js'; // Assuming logger exists
+import { logger } from './logger.js';
+import { type ToolResult } from '../core/ai/tools.js'; // Import ToolResult
 
 /**
  * Checks if a given path exists and is a directory.
@@ -9,14 +10,14 @@ import { logger } from './logger.js'; // Assuming logger exists
  * @returns True if the path exists and is a directory, false otherwise.
  */
 export async function directoryExists(dirPath: string): Promise<boolean> {
-    try {
+    // ... (no changes needed) ...
+     try {
         const stats = await fs.stat(path.resolve(dirPath)); // Resolve path
         return stats.isDirectory();
     } catch (error: any) {
         if (error.code === 'ENOENT') {
             return false; // Doesn't exist
         }
-        // Log other errors but return false
         logger.error(`Error checking directory existence ${dirPath}: ${error.message}`);
         return false;
     }
@@ -30,6 +31,7 @@ export async function directoryExists(dirPath: string): Promise<boolean> {
  * @returns A promise resolving to an array of objects { absolutePath: string, relativePath: string }.
  */
 export async function readDirectoryRecursive(dirPath: string, baseDir: string = dirPath): Promise<{ absolutePath: string, relativePath: string }[]> {
+    // ... (no changes needed) ...
     let files: { absolutePath: string, relativePath: string }[] = [];
     const absoluteDirPath = path.resolve(dirPath); // Ensure absolute path
 
@@ -38,17 +40,12 @@ export async function readDirectoryRecursive(dirPath: string, baseDir: string = 
         for (const entry of entries) {
             const absolutePath = path.join(absoluteDirPath, entry.name);
             const relativePath = path.relative(baseDir, absolutePath);
-
-            // Basic ignore patterns (customize as needed)
             const ignorePatterns = ['node_modules', '.git', 'dist', 'build', '.vscode', '.idea', '.env'];
-            if (ignorePatterns.includes(entry.name)) {
-                continue;
-            }
+            if (ignorePatterns.includes(entry.name)) continue;
 
             if (entry.isDirectory()) {
                 files = files.concat(await readDirectoryRecursive(absolutePath, baseDir));
             } else if (entry.isFile()) {
-                // Basic filtering for common source code/text files
                 const ext = path.extname(entry.name).toLowerCase();
                 const allowedExts = ['.js', '.jsx', '.ts', '.tsx', '.py', '.go', '.java', '.cs', '.rb', '.php', '.html', '.css', '.scss', '.json', '.md', '.yaml', '.yml', '.sh', '.bat', '.txt', 'readme'];
                 if (allowedExts.includes(ext) || entry.name.toLowerCase() === 'readme') {
@@ -57,9 +54,7 @@ export async function readDirectoryRecursive(dirPath: string, baseDir: string = 
             }
         }
     } catch (error: any) {
-        // Log error but allow returning potentially partial results if needed
         logger.error(`Error reading directory ${absoluteDirPath}: ${error.message}`);
-        // Depending on desired behavior, you might want to re-throw or return partial results
     }
     return files;
 }
@@ -70,7 +65,8 @@ export async function readDirectoryRecursive(dirPath: string, baseDir: string = 
  * @returns File content as a string, or null if reading fails.
  */
 export async function readFileContent(filePath: string): Promise<string | null> {
-    const absolutePath = path.resolve(filePath); // Resolve relative to cwd
+    // ... (no changes needed) ...
+     const absolutePath = path.resolve(filePath); // Resolve relative to cwd
     try {
         logger.debug(`Reading file content: ${absolutePath}`);
         return await fs.readFile(absolutePath, 'utf-8');
@@ -81,5 +77,28 @@ export async function readFileContent(filePath: string): Promise<string | null> 
             logger.error(`Error reading file ${absolutePath}: ${error.message}`);
         }
         return null; // Return null on any read error
+    }
+}
+
+/**
+ * Deletes a single file.
+ * @param filePath Path to the file to delete.
+ * @returns A ToolResult object.
+ */
+export async function deleteFile(filePath: string): Promise<ToolResult> {
+    const absolutePath = path.resolve(filePath);
+    logger.info(`Attempting to delete file: ${absolutePath}`);
+    try {
+        await fs.unlink(absolutePath);
+        logger.debug(`Deleted file: ${absolutePath}`);
+        return { success: true, output: `File deleted successfully: ${absolutePath}` };
+    } catch (error: any) {
+        if (error.code === 'ENOENT') {
+            logger.warn(`File not found for deletion: ${absolutePath}`);
+            return { success: false, error: `File not found: ${absolutePath}` };
+        } else {
+            logger.error(`Error deleting file ${absolutePath}: ${error.message}`);
+            return { success: false, error: `Failed to delete file: ${error.message}` };
+        }
     }
 }

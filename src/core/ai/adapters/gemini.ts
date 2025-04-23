@@ -1,32 +1,14 @@
 // src/core/ai/adapters/gemini.ts
 import {
-  GoogleGenerativeAI,
-  HarmCategory,
-  HarmBlockThreshold,
-  GenerateContentResponse,
-  GenerateContentResult, // Keep this for the return type of generateContent
-  GenerateContentRequest,
-  Content,
-  Part,
-  FunctionCallPart as GeminiFunctionCallPart,
-  FunctionResponsePart as GeminiFunctionResponsePart,
+  GoogleGenerativeAI, HarmCategory, HarmBlockThreshold, GenerateContentResponse,
+  GenerateContentResult, GenerateContentRequest, Content, Part,
+  FunctionCallPart as GeminiFunctionCallPart, FunctionResponsePart as GeminiFunctionResponsePart,
   GenerationConfig,
 } from "@google/generative-ai";
-// FIX: Import exported types from session.ts
 import { type ConversationTurn, TextPart, FunctionCallPart, FunctionResponsePart } from '../../session.js';
-import { AiModelAdapter } from './interface.js';
+import { AiModelAdapter, AiToolResponse } from './interface.js'; // Import shared AiToolResponse type
 import { logger } from "../../../utils/logger.js";
 import { geminiToolConfig, defaultSafetySettings, type ToolResult } from '../tools.js';
-
-// Define the structured response type expected from this adapter
-export interface AiToolResponse {
-  text?: string;
-  functionCall?: {
-      name: string;
-      args: Record<string, any>;
-  };
-  finishReason?: string;
-}
 
 export class GeminiAdapter implements AiModelAdapter {
   private genAI: GoogleGenerativeAI;
@@ -45,10 +27,11 @@ export class GeminiAdapter implements AiModelAdapter {
       return this.modelId;
   }
 
+  // FIX: Return type is always AiToolResponse
   async generate(
       promptOrHistory: string | ConversationTurn[],
       options?: Record<string, any>
-  ): Promise<string | AiToolResponse> {
+  ): Promise<AiToolResponse> {
       const modelIdToUse = options?.modelId || this.modelId;
       logger.debug(`Generating with Gemini model: ${modelIdToUse}, Tool support enabled.`);
 
@@ -77,19 +60,17 @@ export class GeminiAdapter implements AiModelAdapter {
           logger.debug("Sending to Gemini:", JSON.stringify(contents.map(c => ({role: c.role, parts: c.parts.length})), null, 2));
 
           const request: GenerateContentRequest = { contents };
-
-          // FIX: Use correct types for result and response
           const result: GenerateContentResult = await model.generateContent(request);
           const response: GenerateContentResponse | undefined = result.response;
 
           logger.debug("Received from Gemini:", JSON.stringify(response, null, 2));
 
           if (!response) {
-              // FIX: Access promptFeedback from result.response if available
-              const blockReason = result.response?.promptFeedback?.blockReason; // Check result.response instead
-              const safetyRatings = result.response?.promptFeedback?.safetyRatings;
-              logger.error('Gemini API returned no response object.', { blockReason, safetyRatings });
-              throw new Error(`Gemini API returned no response object. Block Reason: ${blockReason || 'Unknown'}`);
+               // FIX: Access promptFeedback from result.response if available
+               const blockReason = result.response?.promptFeedback?.blockReason;
+               const safetyRatings = result.response?.promptFeedback?.safetyRatings;
+               logger.error('Gemini API returned no response object.', { blockReason, safetyRatings });
+               throw new Error(`Gemini API returned no response object. Block Reason: ${blockReason || 'Unknown'}`);
           }
 
           const candidate = response.candidates?.[0];
@@ -101,17 +82,13 @@ export class GeminiAdapter implements AiModelAdapter {
           const finishReason = candidate.finishReason;
           logger.debug(`Gemini Finish Reason: ${finishReason}`);
 
-          // FIX: Type the 'part' parameter explicitly
           const funcCallPart = candidate.content?.parts?.find((part: Part): part is GeminiFunctionCallPart => 'functionCall' in part);
 
           if (funcCallPart && funcCallPart.functionCall) {
               const funcCall = funcCallPart.functionCall;
               logger.info(`AI requested function call: ${funcCall.name}`);
-              return {
-                  functionCall: {
-                      name: funcCall.name,
-                      args: funcCall.args ?? {},
-                  },
+              return { // Return structured tool response
+                  functionCall: { name: funcCall.name, args: funcCall.args ?? {} },
                   finishReason: finishReason,
               };
           }
@@ -119,22 +96,25 @@ export class GeminiAdapter implements AiModelAdapter {
           // FIX: Use result.response.text()
           const text = result.response?.text?.(); // Call text() method if it exists on result.response
 
-          if (text === undefined || text === null) { // Check for undefined/null text
+          if (text === undefined || text === null ) { // Check for undefined/null text
                const blockReason = response.promptFeedback?.blockReason;
                if (blockReason || finishReason === 'SAFETY' || finishReason === 'OTHER') {
+                    // Throw error only if blocked, otherwise return empty text
+                    logger.error(`Content generation stopped or empty. Reason: ${blockReason || finishReason}`);
                    throw new Error(`Content generation stopped. Reason: ${blockReason || finishReason}`);
                }
                logger.warn(`Gemini response has no text content and no function call. Finish Reason: ${finishReason}`);
-           }
+          }
 
           logger.debug(`Gemini raw response text length: ${text?.length ?? 0}`);
-          return {
-              text: text ?? "", // Ensure text is always a string
+          return { // Return structured response even for text
+              text: text ?? "",
               finishReason: finishReason
           };
 
       } catch (error: any) {
           logger.error(`Error calling Gemini API: ${error.message}`, { model: modelIdToUse, inputType: typeof promptOrHistory });
+          // Return a structured error response? Or just throw? Throwing is cleaner for now.
           throw new Error(`Gemini API request failed for model ${modelIdToUse}: ${error.message}`);
       }
   }
@@ -164,11 +144,8 @@ export class GeminiAdapter implements AiModelAdapter {
           logger.error(`Invalid role '${role}' being sent to Gemini adapter. Mapping to 'user'.`);
           role = 'user';
       }
-
-      // Ensure parts array is not empty after filtering
       if (mappedParts.length === 0) {
            logger.error(`Turn with role '${role}' resulted in empty parts array after mapping. Adding placeholder.`);
-           // Add a placeholder text part to avoid errors with empty parts array
            mappedParts.push({ text: "[Empty Mapped Part]" });
       }
 

@@ -13,14 +13,15 @@ export const AVAILABLE_MODELS = [
 export type AvailableModelId = typeof AVAILABLE_MODELS[number];
 
 // --- Define structure for conversation history parts ---
-// FIX: Export these interfaces so they can be imported elsewhere
+// Export these interfaces
 export interface TextPart { text: string; }
 export interface FunctionCallPart { functionCall: { name: string; args: Record<string, any>; }; }
 export interface FunctionResponsePart { functionResponse: { name: string; response: ToolResult; }; }
 
 // Updated ConversationTurn to support tool interactions
 export interface ConversationTurn {
-    role: 'user' | 'model' | 'tool'; // Use 'tool' for function results as expected by Gemini
+    // Role 'tool' is used for the response FROM the tool execution for Gemini
+    role: 'user' | 'model' | 'tool';
     parts: (TextPart | FunctionCallPart | FunctionResponsePart)[];
 }
 
@@ -63,12 +64,11 @@ export function addTurnToHistory(turn: ConversationTurn) {
             logger.warn("Attempted to add invalid turn structure to history:", turn);
             return;
         }
-
         const firstPart = turn.parts[0];
+         // Add stricter validation based on role
         if (turn.role === 'user' && !('text' in firstPart)) { logger.warn("Invalid user turn part:", firstPart); return; }
-        if (turn.role === 'model' && !(('text' in firstPart) || ('functionCall' in firstPart))) { logger.warn("Invalid model turn part:", firstPart); return; }
+        if (turn.role === 'model' && !(('text' in firstPart && typeof firstPart.text === 'string') || ('functionCall' in firstPart))) { logger.warn("Invalid model turn part:", firstPart); return; }
         if (turn.role === 'tool' && !('functionResponse' in firstPart)) { logger.warn("Invalid tool response turn part:", firstPart); return; }
-
 
         const lastTurn = currentSession.history[currentSession.history.length - 1];
         if (lastTurn && lastTurn.role === turn.role && JSON.stringify(lastTurn.parts) === JSON.stringify(turn.parts)) {
