@@ -11,10 +11,10 @@ AI CLI Tool is an interactive command-line application that leverages AI models 
 - **Natural Language Interaction**: Ask questions or give instructions in plain English.
 - **Improved Multi-Step Task Handling**: Enhanced ability for the AI to plan and execute sequential tasks, especially for project scaffolding.
 - **Context-Aware Command Execution**: The AI can now execute shell commands within specific subdirectories using the `cwd` parameter.
-- **Code Analysis**: Analyze your codebase structure.
+- **Code Analysis**: Analyze your codebase structure. ![Codebase Analysis Demo](./screenshots/codebase_analysis.png)
 - **File Operations**: Create, read, and update files through natural language or specific commands.
 - **Conversation History**: Maintain context across multiple interactions.
-- **Multiple AI Models**: Support for different AI models (currently Gemini).
+- **Multiple AI Models**: Support for different AI models (currently Gemini). Easily switch between models using the `/model` command. ![Model Selection Demo](./screenshots/models.png)
 
 ## Installation
 
@@ -70,14 +70,34 @@ Interact with the AI using natural language for tasks like:
 
 ### Available Commands
 
+Use `/help` to see the list of available slash commands:
+
+![Help Command Demo](./screenshots/help.png)
+
 - **Natural Language**: Type any question or instruction. The AI will attempt to plan and execute the necessary steps.
 - **/create**: Manually create files or directories (e.g., `/create file path/to/file.txt`).
 - **/run**: Manually execute a single shell command (e.g., `/run git status`).
-- **/model**: Select the AI model to use.
+- **/model**: Select the AI model to use (See Models Demo above).
 - **/history**: View conversation history.
 - **/clear**: Clear conversation history.
 - **/help**: Show available commands.
 - **/quit**: Exit the application.
+
+## Examples
+
+### Creating a Simple Express API
+
+Demonstrates the AI planning and executing multiple steps (creating files, installing dependencies) to set up a basic Express server.
+
+**Step 1: Request and File Creation**
+![Express Demo Step 1](./screenshots/express1.png)
+
+**Step 2: Dependency Installation**
+![Express Demo Step 2](./screenshots/express2.png)
+
+**Step 3: Running the Server (Manual Step)**
+*Note: Currently, the AI instructs the user to run the server manually.*
+![Express Demo Step 3](./screenshots/express3.png)
 
 ## Current Functionality
 
@@ -133,7 +153,7 @@ pnpm test
 
 ## Roadmap
 
-- [ ] Further enhance project scaffolding automation (reduce confirmations).
+- [ ] Further enhance project scaffolding automation (reduce confirmations, add server running capability).
 - [ ] Automated dependency detection and management.
 - [ ] Code generation and refactoring capabilities.
 - [ ] Integration with more AI models.

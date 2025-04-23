@@ -7,7 +7,7 @@ import { type ToolResult } from './ai/tools.js';
 export const AVAILABLE_MODELS = [
     "gemini-1.5-flash-latest",
     "gemini-1.5-pro-latest",
-    "gemini-2.5-pro-preview-03-25",
+    "gemini-2.5-pro-exp-03-25",
 ] as const;
 
 export type AvailableModelId = typeof AVAILABLE_MODELS[number];
